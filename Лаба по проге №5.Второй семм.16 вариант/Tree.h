@@ -14,6 +14,7 @@ public:
 	Tree();
 	Tree(OurKey Key);
 	Tree(uint16_t size);
+	Tree(string INPUT_FILE, int init);
 	Tree_Node<OurKey>* _Root();
 	void addIndex(OurKey AddingKey, int index);
 	void addElement(OurKey KeyToAdd, OurKey AddingKey);
@@ -22,8 +23,10 @@ public:
 	void SetKey(OurKey FindingKey, OurKey ChangedKey);
 	int GetIndex(OurKey KeyFinding);
 	void ClearTree();
-	void OutputTree(Tree_Node<std::string>* OutputPointer, uint8_t TreeLevel);
-	string FindKey(string KeyFinding);
+	void OutputTreeInFile(Tree_Node<OurKey>* OutputPointer, ofstream& OutStream);
+	void OutputTree(Tree_Node<OurKey>* OutputPointer, uint8_t TreeLevel);
+	bool FindKey(OurKey Key);
+	double GetGeometricAverage();
 	void DeleteElement(OurKey DeletingKey);
 
 private:
@@ -37,6 +40,7 @@ private:
 	bool IsEmpty();
 	Tree_Node<OurKey>* DFS(Tree_Node<OurKey>* DynamicDFSPointer, OurKey FindingKey);
 	Tree_Node<OurKey>* DFSi(Tree_Node<OurKey>* DynamicDFSPointer, int index);
+	double multiplicationTree(Tree_Node<OurKey>* DynamicDFSPointer, double Mult);
 	void deleteTree_Node(Tree_Node<OurKey>* ClearPointer);
 	Tree_Node <OurKey>* FindFreeSpaceCh(Tree_Node<OurKey>* DynamicDFSPointer, uint16_t ParrentChildNum);
 	int get_index();
@@ -89,6 +93,33 @@ inline Tree<std::string>::Tree(uint16_t size)
 			if (i == 0) Current = Current->Child;
 			else Current = Current->Sibling;
 		}
+	}
+}
+inline Tree<std::string>::Tree(string INPUT_FILE, int init)
+{
+	ifstream Read;
+	string Parrent, Key;
+	Read.open(INPUT_FILE, ios::in);
+	this->size++;
+	Root = new Tree_Node<std::string>;
+	Read >> Root->KeyField;
+	while (!Read.eof()) {
+		Read >> Parrent >> Key;
+		this->addElement(Parrent, Key);
+	}
+}
+inline Tree<int>::Tree(string INPUT_FILE, int init)
+{
+	ifstream Read;
+	int Parrent, Key;
+	Read.open(INPUT_FILE, ios::in);
+	this->size++;
+	Root = new Tree_Node<int>;
+	Read >> Root->KeyField;
+	while (!Read.eof()) {
+		Read >> Parrent >> Key;
+		if (!this->FindKey(Key))
+			this->addElement(Parrent, Key);
 	}
 }
 inline Tree<int>::Tree(uint16_t size)
@@ -219,7 +250,9 @@ inline void Tree<OurKey>::addElement(OurKey KeyToAdd, OurKey AddingKey)
 template<typename OurKey>
 inline Tree_Node<OurKey>* Tree<OurKey>::_Root()
 {
-	return this->Root;
+	if (!this->IsEmpty())
+		return this->Root;
+	else return NULL;
 }
 
 
@@ -268,9 +301,26 @@ inline void Tree<OurKey>::ClearTree()
 	Root = NULL;
 	size = 0;
 }
+template<typename OurKey>
+inline void Tree<OurKey>::OutputTreeInFile(Tree_Node<OurKey>* OutputPointer, ofstream& OutStream)
+{
+	if (OutputPointer == Root) {
+		OutStream << OutputPointer->KeyField << endl;
+	}
+	else {
+		OutStream << OutputPointer->Parrent->KeyField << ' ' << OutputPointer->KeyField << endl;
+	}
+	if (OutputPointer->Sibling != NULL) {
+		OutputTreeInFile(OutputPointer->Sibling, OutStream);
+	}
+	if (OutputPointer->Child != NULL) {
+		OutputTreeInFile(OutputPointer->Child, OutStream);
+	}
+	return;
+}
 //Придумывающийся алгоритм
-
-inline void Tree<std::string>::OutputTree(Tree_Node<std::string>* OutputPointer, uint8_t TreeLevel)
+template<typename OurKey>
+inline void Tree<OurKey>::OutputTree(Tree_Node<OurKey>* OutputPointer, uint8_t TreeLevel)
 {
 	if (this->IsEmpty()) { cerr << "Tree is empty\n"; return;  }
 	for (int i = 0; i < 5 * TreeLevel; ++i) cout << ' ';
@@ -307,12 +357,23 @@ inline void Tree<std::string>::OutputTree(Tree_Node<std::string>* OutputPointer,
 //}
 
 
-inline string Tree<string>::FindKey(string KeyFinding)
+
+template<typename OurKey>
+inline bool Tree<OurKey>::FindKey(OurKey Key)
 {
-	if (this->IsEmpty()) { cerr << "Tree is empty\n"; return "-1"; }
-	DFSPointer = DFS(Root, KeyFinding);
-	if (DFSPointer == NULL) { cout << "NotFound\n"; return "-1"; }
-	return DFSPointer->KeyField;
+	if (this->IsEmpty()) return false;
+	DFSPointer = DFS(Root, Key);
+	if (DFSPointer != NULL) return true;
+	else return false;
+}
+
+template<typename OurKey>
+inline double Tree<OurKey>::GetGeometricAverage()
+{
+	if (this->IsEmpty())
+		return 0.0;
+	else
+		return pow(multiplicationTree(Root, 1), (1.0 / this->size));
 }
 
 template<typename OurKey>
@@ -529,7 +590,7 @@ inline void Tree<OurKey>::DeleteElement(OurKey DeletingKey)
 template<typename OurKey>
 inline bool Tree<OurKey>::IsEmpty()
 {
-	if (this->size == 0)return true;
+	if (this == NULL)return true;
 	else return false;
 }
 
@@ -565,6 +626,19 @@ inline Tree_Node<OurKey>* Tree<OurKey>::DFSi(Tree_Node<OurKey>* DynamicDFSPointe
 		return DFSPointer;
 	}
 	if (DynamicDFSPointer->Child == NULL || DynamicDFSPointer->Sibling == NULL) return NULL;
+}
+
+template<typename OurKey>
+inline double Tree<OurKey>::multiplicationTree(Tree_Node<OurKey>* DynamicDFSPointer, double Mult)
+{
+	if (this->IsEmpty())return 0.0;
+	if (DynamicDFSPointer->Sibling != NULL) {
+		Mult = multiplicationTree(DynamicDFSPointer->Sibling, Mult);
+	}
+	if (DynamicDFSPointer->Child != NULL) {
+		Mult = multiplicationTree(DynamicDFSPointer->Child, Mult);
+	}
+	return Mult * DynamicDFSPointer->KeyField;
 }
 
 template<typename OurKey>

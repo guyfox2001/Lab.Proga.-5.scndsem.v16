@@ -143,6 +143,7 @@
     <ClCompile Include="Tree.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="checkfile.h" />
     <ClInclude Include="headerinc.h" />
     <ClInclude Include="stringrandom.h" />
     <ClInclude Include="Tree.h" />

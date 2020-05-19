@@ -1,10 +1,11 @@
 #include "headerinc.h"
 #include "tree_node.h"
 #include "Tree.h"
+#include "checkfile.h"
 #include "stringrandom.h"
 #include <Windows.h>
 
-Tree <string>* Tree_;
+Tree <int>* Tree_;
 bool tree_initFlag = false;
 
 void print_menu() {
@@ -21,12 +22,17 @@ void print_menu() {
 	cout << "10.Корень дерева\n";
 	cout << "11.Изменить ключ \n";
 	cout << "12.Изменить ключ по индексу \n";
+	cout << "13.Вывести дерево в файл\n";
+	cout << "14.Считать дерево из файла\n";
+	cout << "15.Расчитать среднее геометрическое \n";
 }
 
 void SW_OP() {
-	int operation, index;
+	int operation, index, RWriteFlag, AddingKey, Key;
 	bool flag = false;
-	string Key, AddingKey;
+	double AG;
+	string Filename;
+	ofstream Output;
 	print_menu();
 	do
 	{
@@ -43,7 +49,7 @@ void SW_OP() {
 					cin >> size;
 					if (cin) break;
 				}
-				Tree_ = new Tree <string>(size);
+				Tree_ = new Tree <int>(size);
 				Tree_->OutputTree(Tree_->_Root(), 0);
 				tree_initFlag = true;
 			}
@@ -56,23 +62,17 @@ void SW_OP() {
 		case 2:
 			if (tree_initFlag == true) {
 				cout << "Введите ключ к которому будет добавляться\n";
-				do{
-					getline(cin, Key);
-				} while (Key.empty());
+				cin >> Key;
 				cout << "Введите добавляемый ключ\n";
-				do {
-					getline(cin, AddingKey);
-				} while (AddingKey.empty());
+				cin >> AddingKey;
 				Tree_->addElement(Key, AddingKey);
 				Tree_->OutputTree(Tree_->_Root(), 0);
 			}
 			else {
 				cout << "Дерево пустое\n";
 				cout << "Введите добавляемый ключ\n";
-				do {
-					getline(cin, AddingKey);
-				} while (AddingKey.empty());
-				Tree_ = new Tree<string>(AddingKey);
+				cin >> AddingKey;
+				Tree_ = new Tree<int>(AddingKey);
 				Tree_->OutputTree(Tree_->_Root(), 0);
 				tree_initFlag = true;
 			}
@@ -83,19 +83,15 @@ void SW_OP() {
 				cout << "Введите индекс к которому будет добавляться\n";
 				cin >> index;
 				cout << "Введите добавляемый ключ\n";
-				do {
-					getline(cin, AddingKey);
-				} while (AddingKey.empty());
+				cin >> AddingKey;
 				Tree_->addIndex(AddingKey, index);
 				Tree_->OutputTree(Tree_->_Root(), 0);
 			}
 			else {
 				cout << "Дерево пустое\n";
 				cout << "Введите добавляемый ключ\n";
-				do {
-					getline(cin, AddingKey);
-				} while (AddingKey.empty());
-				Tree_ = new Tree<string>(AddingKey);
+				cin >> AddingKey;
+				Tree_ = new Tree<int>(AddingKey);
 				Tree_->OutputTree(Tree_->_Root(), 0);
 				tree_initFlag = true;
 			}
@@ -109,18 +105,15 @@ void SW_OP() {
 			break;
 		case 5:
 			cout << "Введите ключ\n";
-			do {
-				getline(cin, Key);
-			} while (Key.empty());
+			cin >> Key;
 			cout << "Результат: " << Tree_->GetIndex(Key) << ' ' << Key << endl;
 			flag = false;
 			break;
 		case 6:
 			cout << "Введите ключ\n";
-			do {
-				getline(cin, Key);
-			} while (Key.empty());
-			cout << "Результат: " << Tree_->FindKey(Key) << endl;
+			cin >> Key;
+			if (Tree_->FindKey(Key)) cout << "Ключ есть в дереве\n";
+			else cout << "Ключа нету в дереве\n";
 			flag = false;
 			break;
 		case 7:
@@ -136,27 +129,24 @@ void SW_OP() {
 			break;
 		case 9:
 			cout << "Введите ключ\n";
-			do {
-				getline(cin, Key);
-			} while (Key.empty());
+			cin >> Key;
 			Tree_->DeleteElement(Key);
 			Tree_->OutputTree(Tree_->_Root(), 0);
 			cout << endl;
 			flag = false;
 			break;
 		case 10:
-			cout << "Корень: " << Tree_->_Root()->KeyField << '(' << Tree_->_Root()->index << ')' << endl;
+			if (Tree_->_Root() != NULL)
+				cout << "Корень: " << Tree_->_Root()->KeyField << '(' << Tree_->_Root()->index << ')' << endl;
+			else
+				cout << "Дерево пустое\n";
 			flag = false;
 			break;
 		case 11: 
 			cout << "Введите ключ к который будет изменяться\n";
-			do {
-				getline(cin, Key);
-			} while (Key.empty());
+			cin >> Key;
 			cout << "Введите изменяемый ключ\n";
-			do {
-				getline(cin, AddingKey);
-			} while (AddingKey.empty());
+			cin >> AddingKey;
 			Tree_->SetKey(Key, AddingKey);
 			Tree_->OutputTree(Tree_->_Root(), 0);
 			flag = false; 
@@ -165,12 +155,63 @@ void SW_OP() {
 			cout << "Введите индекс\n";
 			cin >> index;
 			cout << "Введите изменяемый ключ\n";
-			do {
-				getline(cin, AddingKey);
-			} while (AddingKey.empty());
+			cin >> AddingKey;
 			Tree_->SetKeyIndex(index, AddingKey);
 			Tree_->OutputTree(Tree_->_Root(), 0);
-			flag = true;
+			flag = false;
+			break;
+		case 13:
+			cout << "Введите название файла \n";
+			do {
+				getline(cin, Filename);
+			} while (Filename.empty());
+			Filename = check_mask(Filename);
+			if (check_empty(Filename)) {
+				Output.open(Filename, ios::out);
+				Tree_->OutputTreeInFile(Tree_->_Root(), Output);
+				cout << "Записано в файл:" << Filename;
+			}
+			else {
+				cout << "Файл не пуст.Хотите перезаписать? 1.YES 2.NO\n";
+				do {
+					cin >> RWriteFlag;
+					if (RWriteFlag == 2 || RWriteFlag == 1) break;
+					cout << "Повторите ввод\n";
+				} while (true);
+				if (RWriteFlag == 1) {
+					Output.open(Filename, ios::out);
+					Tree_->OutputTreeInFile(Tree_->_Root(), Output);
+					cout << "Записано в файл:" << Filename;
+				}
+			}
+			break;
+		case 14:
+			uint16_t size;
+			if (tree_initFlag == false) {
+				cout << "Введите название файла \n";
+				do {
+					getline(cin, Filename);
+				} while (Filename.empty());
+				Filename = check_mask(Filename);
+				if (!check_empty(Filename)) {
+					Tree_ = new Tree <int>(Filename, 0);
+					Tree_->OutputTree(Tree_->_Root(), 0);
+					tree_initFlag = true;
+				}
+				else {
+					cout << "Файл пуст или не найден\n";
+				}
+			}
+			else {
+				cout << "Дерево уже проинициализировано\n";
+			}
+			flag = false;
+			break;
+		case 15:
+			AG = Tree_->GetGeometricAverage();
+			if (AG != 0.0) cout << "Среднее геометрическое этого дерева: " << fixed <<setprecision(2) << AG << '\n';
+			else cout << "Дерево пусто\n";
+			flag = false;
 			break;
 		default:
 			cout << "Ошибка ввода. Попробуйте ещё.\n";
@@ -179,6 +220,8 @@ void SW_OP() {
 		}
 	} while (flag);
 }
+
+//TODO:Проверить выполнение IsEmpty()
 
 int main() {
 	SetConsoleCP(1251);
